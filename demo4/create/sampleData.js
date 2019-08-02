@@ -4,36 +4,37 @@ var stdout = "";
 var stderr = "";
 
 function retrieveSampleVideo() {
-    var oReq = new XMLHttpRequest();
-    oReq.open("GET", "test.mp3", true);
-    oReq.responseType = "arraybuffer";
+  var oReq = new XMLHttpRequest();
+  oReq.open("GET", "test.mp3", true);
+  oReq.responseType = "arraybuffer";
 
-    oReq.onload = function (oEvent) {
-        var arrayBuffer = oReq.response;
-        if (arrayBuffer) {
-            sampleVideoData = new Uint8Array(arrayBuffer);
-            console.log(sampleVideoData);
-            const result = ffmpeg({
-                // MEMFS: [{ name: "test.mp3", data: fileResult }],
-                MEMFS: [{ name: "test.mp3", data: sampleVideoData }],
-                arguments: ["-i", "test.mp3", "-filter_complex", "volumedetect", "-c:v", "copy", "-f", "null", "/dev/null"],
-                print: function (data) {
-                    stdout += data + "\n";
-                },
-                printErr: function (data) {
-                    stderr += data + "\n";
-                },
-                onExit: function (code, data) {
-                    console.log("Process exited with code " + code);
-                    console.log(stdout);
-                    console.log(data);
-                },
-            });
-            console.log(result)
-        }
-    };
+  oReq.onload = function (oEvent) {
+    var arrayBuffer = oReq.response;
+    if (arrayBuffer) {
+      sampleVideoData = new Uint8Array(arrayBuffer);
+      console.log(sampleVideoData);
+      const result = ffmpeg({
+        // MEMFS: [{ name: "test.mp3", data: fileResult }],
+        MEMFS: [{ name: "test.mp3", data: sampleVideoData }],
+        // arguments: ["-i", "test.mp3", "-filter_complex", "volumedetect", "-c:v", "copy", "-f", "null", "/dev/null"],
+        arguments: ["-i", "test.mp3", "test.wav"],
+        print: function (data) {
+          stdout += data + "\n";
+        },
+        printErr: function (data) {
+          stderr += data + "\n";
+        },
+        onExit: function (code, data) {
+          console.log("Process exited with code " + code);
+          console.log(stdout);
+          console.log(data);
+        },
+      });
+      console.log(result)
+    }
+  };
 
-    oReq.send(null);
+  oReq.send(null);
 }
 retrieveSampleVideo();
 
