@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        #meter {
+            width: 0%;
+            height: 15px;
+            margin: 2px 0;
+            background: green;
+            -webkit-transition: width .05s;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="file" id="uploadFile">
+    <div id="meter"></div>
+    <div id="mystatus"></div>
+</body>
+
+<script>
+    const mystatus = document.getElementById('mystatus');
+    const audioFile = document.getElementById('uploadFile');
+    window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
+    const audioContext = new AudioContext();
+    let minMax = [0, 0];
+    function strip(num, precision = 2) {
+        return +parseFloat(num.toPrecision(precision));
+    }
+    audioFile.onchange = function (e) {
+        const file = e.target.files[0];
+        const fr = new FileReader();
+        fr.onload = function (e) {
+            const fileResult = e.target.result;
+            audioContext.decodeAudioData(fileResult, function (buffer) {
+                const audioBufferSouceNode = audioContext.createBufferSource();
+                const processor = audioContext.createScriptProcessor(2048, 1, 1);
+                audioBufferSouceNode.connect(processor);
+                processor.connect(audioContext.destination);
+                audioBufferSouceNode.connect(audioContext.destination)
+
+                audioBufferSouceNode.buffer = buffer;
+                audioBufferSouceNode.start(0);
+                // 2048 sample buffer, 1 channel in, 1 channel out  
+                var meter = document.getElementById('meter');
+
+                audioBufferSouceNode.onended = function () {
+                    console.log('end');
+                    console.log(minMax);
+                }
+
+                // loop through PCM data and calculate average
+                // volume for a given 2048 sample buffer
+                processor.onaudioprocess = function (audioProcessingEvent) {
+                    
+
+                    // var buffer = evt.inputBuffer.getChannelData(0); //获得缓冲区的输入音频，转换为包含了PCM通道数据的32位浮点数组
+                    // //创建变量并迭代来获取最大的音量值
+                    // var maxVal = 0;
+                    // for (var i = 0; i < buffer.length; i++) {
+                    //     console.log(buffer[i]);
+                    //     if (maxVal < buffer[i]) {
+                    //         maxVal = buffer[i];
+                    //     }
+                    // }
+                    // //显示音量值
+                    // mystatus.innerHTML = "您的音量值：" + Math.round(maxVal * 100);
+                    // if (maxVal > .5) {
+                    //     //当音量值大于0.5时，显示“声音太响”字样，并断开音频连接
+                    //     mystatus.innerHTML = "您的声音太响了!!";
+                    //     // audioBufferSouceNode.disconnect(processor);
+                    // }
+
+
+                    // The input buffer is the song we loaded earlier
+                    var inputBuffer = audioProcessingEvent.inputBuffer;
+                    // The output buffer contains the samples that will be modified and played
+                    var outputBuffer = audioProcessingEvent.outputBuffer;
+
+                    // console.log(inputBuffer);
+                    // console.log(outputBuffer);
+
+                    let total = 0;
+                    let rms;
+
+                    // Loop through the output channels (in this case there is only one)
+                    for (var channel = 0; channel < outputBuffer.numberOfChannels; channel++) {
+                        var inputData = inputBuffer.getChannelData(channel);
+                        var outputData = outputBuffer.getChannelData(channel);
+
+                        // Loop through the 4096 samples
+                        for (var sample = 0; sample < inputBuffer.length; sample++) {
+                            // make output equal to the same as the input
+                            outputData[sample] = inputData[sample];
+                            // console.log(strip(outputData[sample]));
+                            total += Math.abs(inputData[sample])
+                            rms = Math.sqrt(total / inputBuffer.length)
+                            // console.log(rms);
+                            if (strip(rms) > minMax[1]) minMax[1] = strip(rms);
+                            // add noise to each output sample
+                            // outputData[sample] += ((Math.random() * 2) - 1) * 0.2;
+                        }
+                    }
+                }
+
+            }, function (e) {
+                console.error(e);
+            });
+
+
+
+        }
+        fr.readAsArrayBuffer(file);
+    }
+
+</script>
+
+</html>
