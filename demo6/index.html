@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>ffmpeg-woker-webm</title>
+  <style>
+    #log {
+      box-sizing: border-box;
+      line-height: 20px;
+      margin-top: 10px;
+      padding: 5px;
+      border: 1px dashed #000;
+    }
+  </style>
+</head>
+
+<body>
+
+  <input type="file" id="fileInput">
+  <video src="" controls id="video"></video>
+  <audio src="" controls id="audio"></audio>
+  <a href="" id="a">12312</a>
+  <!-- <img src="" alt="" id="img"> -->
+
+  <div class="log" id="log"></div>
+
+</body>
+
+<script>
+  var file;
+  var fileName;
+  var fileBuffer;
+
+  function getWorker() {
+    var stdout = "";
+    var stderr = "";
+    var worker = new Worker("./ffmpeg-worker-webm.js");
+    worker.onmessage = function (e) {
+      var msg = e.data;
+      console.log(msg.type, msg.data);
+      log.innerHTML += `${msg.type}: ${msg.data}</br>`;
+      switch (msg.type) {
+        case "ready":
+          // worker.postMessage({ type: "run", arguments: ["-version"] });
+          break;
+        case "stdout":
+          stdout += msg.data + "\n";
+          break;
+        case "stderr":
+          stderr += msg.data + "\n";
+          break;
+        case "done":
+          console.log(msg);
+          const files = msg.data.MEMFS;
+          if (files && files.length) {
+            for (let index = 0; index < files.length; index++) {
+              const element = files[index];
+              const img = document.createElement('img');
+              img.src = window.URL.createObjectURL(new Blob([element.data]));
+              document.body.appendChild(img);
+            }
+          }
+          // const src = window.URL.createObjectURL(new Blob([file.data]));
+          // a.href = src;
+          // img.src = src;
+          // console.log(src);
+          break;
+        case "error":
+          console.log(msg.data);
+          stderr += msg.data + "\n";
+          break;
+        case "exit":
+          console.log(msg);
+          console.log("Process exited with code " + msg.data);
+          console.log(stdout);
+          // worker.terminate();
+          break;
+      }
+    };
+    return worker;
+  }
+
+
+  function readInputFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      fileName = file.name;
+      fileBuffer = e.target.result;
+      // const _arguments = ["-i", fileName, "-c:v", "libvpx", "-an", 'output.webm'];
+      // const _arguments = ["-i", fileName, 'output.wav'];
+      // const _arguments = ['-version'] // 查看版本
+      // const _arguments = ['–filters'] // 查看可用过滤器
+      const _arguments = ['–codecs'] // 查看可用的编码器
+      // const _arguments = ['-i', fileName, '-r', '1', '-f', 'image2', 'frame-%03d.jpeg'] // 截取视频的每一帧
+      // const _arguments = [
+      //   "-i",
+      //   fileName,
+      //   '-filter_complex',
+      //   '[1:v]scale=480:-1[scaled_overlay],[0:v][scaled_overlay]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2',
+      //   'output.mp4'
+      // ]; // 合成视频?
+      // const _arguments = ["-i", fileName, '-filter_complex', 'volumedetect', '-c:v', 'copy', '-f', 'null', '/dev/null'] // 音频分贝监测
+
+      console.log(fileName, fileBuffer, file);
+      console.log(_arguments);
+
+      var worker = getWorker();
+      worker.postMessage({
+        type: 'run',
+        MEMFS: [{ name: fileName, data: new Uint8Array(fileBuffer) }],
+        arguments: _arguments,
+      })
+    }
+    reader.readAsArrayBuffer(file);
+  }
+
+  function handleFileSelect(event) {
+    var files = event.target.files;
+    file = files[0];
+    if (file) {
+      readInputFile(file)
+    }
+  }
+
+  fileInput.addEventListener('change', handleFileSelect, false)
+</script>
+
+</html>

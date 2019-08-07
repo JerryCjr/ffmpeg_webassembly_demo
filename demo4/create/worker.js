@@ -43,6 +43,10 @@ worker.onmessage = function (e) {
     case "stderr":
       stderr += msg.data + "\n";
       break;
+    case "done":
+      stdout += msg.data + "\n";
+      stderr += msg.data + "\n";
+      break;
     case "exit":
       console.log("Process exited with code " + msg.data);
       console.log(stdout);

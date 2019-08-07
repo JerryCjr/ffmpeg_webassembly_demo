@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>不是标准db</title>
+  <style>
+    .meter {
+      height: 20px;
+      width: 200px;
+      position: relative;
+      border: 1px solid #ccc;
+    }
+
+
+    .bar {
+      width: 0%;
+      height: 100%;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      background: green;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="meter">
+    <div class="bar"></div>
+  </div>
+
+  <div id="button">click</div>
+
+  <!-- <audio src="" controls id="audio"></audio> -->
+
+</body>
+
+<script>
+  var src,
+    fftSize = 1024,
+    audio = new Audio(),
+    ac = new AudioContext(),
+    analyser = ac.createAnalyser(),
+    timeData = new Uint8Array(fftSize),
+    bar = document.querySelector('.bar'),
+    // url = 'http://static1.kevincennis.com/sounds/callmemaybe.mp3';
+    url = './test.mp3';
+
+  analyser.fftSize = fftSize;
+  audio.src = url;
+  console.log(audio);
+
+  audio.addEventListener('canplaythrough', function () {
+    src = ac.createMediaElementSource(audio);
+    src.connect(analyser);
+    analyser.connect(ac.destination);
+    src.connect(ac.destination);
+    console.log(1);
+  }, false);
+
+  button.addEventListener('click', () => {
+    audio.play();
+    draw();
+  }, false)
+
+  function draw() {
+    var total = i = 0
+      , percentage
+      , float
+      , rms
+      , db;
+    analyser.getByteTimeDomainData(timeData);
+    while (i < fftSize) {
+      float = (timeData[i++] / 0x80) - 1;
+      total += (float * float);
+    }
+    rms = Math.sqrt(total / fftSize);
+    db = 20 * (Math.log(rms) / Math.log(10));
+    console.log(db);
+
+    // sanity check
+    db = Math.max(-48, Math.min(db, 0));
+    percentage = 100 + (db * 2.083);
+    bar.style.width = percentage + '%';
+    requestAnimationFrame(draw);
+  }
+</script>
+
+</html>

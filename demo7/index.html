@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/comlinkjs@3.0.2/umd/comlink.js"></script>
+  <input type=file accept="video/*" id=input>
+  <video id=output autoplay style="width:100%;" controls></video>
+
+  <script>
+    let worker = new Worker('./worker.js');
+    input.onchange = async (e) => {
+      let file = e.target.files[0];
+      let data = await new Response(file).arrayBuffer();
+      let stderr = "";
+      let stdout = "";
+      let ffmpegjs = await Comlink.proxy(worker);
+      let result = await ffmpegjs({
+        arguments: ['-y', '-i', file.name, 'output.webm'],
+        MEMFS: [{ name: file.name, data: data }],
+        stdin: Comlink.proxyValue(() => { }),
+        onfilesready: Comlink.proxyValue((e) => {
+          let data = e.MEMFS[0].data;
+          output.src = URL.createObjectURL(new Blob([data]))
+          console.log('ready', e)
+        }),
+        print: Comlink.proxyValue(function (data) { console.log(data); stdout += data + "\n"; }),
+        printErr: Comlink.proxyValue(function (data) { console.log('error', data); stderr += data + "\n"; }),
+        postRun: Comlink.proxyValue(function (result) { console.log('DONE', result); }),
+        onExit: Comlink.proxyValue(function (code) {
+          console.log("Process exited with code " + code);
+          console.log(stdout);
+        }),
+      });
+      console.log(result);
+    };
+  </script>
+</body>
+
+
+</html>
