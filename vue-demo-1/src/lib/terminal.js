@@ -1,5 +1,4 @@
-worker = new Worker("worker-asm.js");
-console.log(worker)
+var worker = new Worker("worker-asm.worker.js");
 worker.onmessage = function (event) {
   var message = event.data;
   console.log(message.type, message.data)

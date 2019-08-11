@@ -45,7 +45,8 @@ module.exports = {
       },
       {
         test: /\.worker\.js$/,
-        use: { loader: 'worker-loader' }
+        loader: 'worker-loader',
+        options: { name: 'WorkerName.[hash].js' }
       },
       {
         test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
