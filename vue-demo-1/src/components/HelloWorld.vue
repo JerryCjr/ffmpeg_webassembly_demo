@@ -1,6 +1,5 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
     <h2>FFmpeg + worker + vue</h2>
     <input id='file' type='file' @change=handlerChange :disabled="!readied" multiple>
 
@@ -24,7 +23,6 @@ export default {
   name: 'HelloWorld',
   data() {
     return {
-      msg: 'Welcome to Your Vue.js App',
       worker: null,
       readied: false,
       activeIndex: 0,

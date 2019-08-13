@@ -1,4 +1,4 @@
-require('./ffmpeg-all-codecs.js')
+import './ffmpeg-all-codecs.js'
 
 var now = Date.now;
 
